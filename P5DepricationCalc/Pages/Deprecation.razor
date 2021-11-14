@@ -1,0 +1,180 @@
+﻿@page "/deprication"
+@using P5DepricationCalc.Data.Interfaces
+@using P5DepricationCalc.Data.Models
+@using System.Globalization
+@using P5DepricationCalc.Data;
+
+@inject MyAssetApi api
+@inject NavigationManager NavigationManager
+
+
+<h3>Assets</h3>
+
+@{
+    List<MyAsset> assets = api.GetMyAssetsAsync(100, 0).Result;
+    DeprecationCalc depCalc = new DeprecationCalc();
+
+
+    <table class="table">
+        <tbody>
+            @foreach (var asset in assets)
+            {
+                @if (asset.YearlyDeprecation == 0)
+                {
+                    asset.YearlyDeprecation = depCalc.CalcYearlyDepreciation(asset);
+                }
+                List<AssetDataClass> assetValueByYear = depCalc.GenerateValueByYear(asset);
+                @if (true)
+                {
+                    AllAssetData.AddRange(assetValueByYear);
+                }
+                @if (asset.GraphVis)
+                {
+                    graphVis = "initial";
+                    defualtState = "none";
+                }
+                else
+                {
+                    graphVis = "none";
+                    defualtState = "initial";
+                }
+                <tr style="@("display: " + defualtState)">
+                    <td><strong>@asset.Name</strong></td>
+                    <td><strong>Initial Value: $@asset.InitValue</strong></td>
+                    <td><strong>Salvage Value: $@asset.SalvageValue</strong></td>
+                    <td><strong>Useful Life: @asset.UsefullLife</strong></td>
+                    <td><strong>Date Added: @asset.DateIn.ToShortDateString()</strong></td>
+                    <td><strong>Date Removed: @asset.DateOut.ToShortDateString()</strong></td>
+                    <td><button class="btn btn-primary" style="margin:5px;" @onclick="@(()=>EditViewItem(asset.Id, asset))">Edit/View</button><button class="btn btn-primary" style="margin:5px;" @onclick="(()=>Delete(asset))">Delete</button></td>
+                </tr>
+
+                //EDIT/VIEW MODE
+                <tr style="@("display: " + graphVis)">
+                    <td><label>Asset Name <input type="text" @bind="name" /></label></td>
+                    <td><label>Initial Value<input type="text" @bind="initialValue" /></label></td>
+                    <td><label>Salvage Value<input type="text" @bind="salvageValue" /></label></td>
+                    <td><label>Usefule Life <input type="text" @bind="usefulLife" /></label></td>
+                    <td><label>Date Added <input type="date" @bind="dateIn" /></label></td>
+                    <td><label>Date Removed <input type="date" @bind="dateOut" /></label></td>
+                    <td><button class="btn btn-primary" style="margin:5px;" @onclick="(()=>Save(asset))">Save</button><button class="btn btn-primary" style="margin:5px;" @onclick="(()=>Cancel(asset))">Cancel</button></td>
+
+                </tr>
+
+                <div class="container" style="@("display: " + graphVis)">
+                    <div class="row">
+                        <div class="col-sm-12 my-5">
+                            <RadzenChart>
+                                <RadzenLineSeries Smooth="true" Data="@assetValueByYear" CategoryProperty="year" Title="Asset Value" LineType="LineType.Dashed" ValueProperty="assetValue">
+                                    <RadzenMarkers MarkerType="MarkerType.Circle" />
+                                    <RadzenAxisTitle Text="Year" />
+                                </RadzenLineSeries>
+                                <RadzenCategoryAxis FormatString="{0}" />
+                                <RadzenValueAxis Formatter="@FormatAsUSD">
+                                    <RadzenGridLines Visible="true" />
+                                    <RadzenAxisTitle Text="Revenue in USD" />
+                                </RadzenValueAxis>
+                            </RadzenChart>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </tbody>
+    </table>
+
+    <button class="btn btn-primary" @onclick="AddAsset">Add Asset</button>
+
+    List<AssetDataClass> FinalAgregateAssetData = depCalc.AgregateInventoryValue(AllAssetData);
+
+
+    <div class="container" >
+        <div class="row">
+            <div class="col-sm-12 my-5">
+                <RadzenChart>
+                    <RadzenLineSeries Smooth="false" Data="@FinalAgregateAssetData" CategoryProperty="year" Title="Asset Value" LineType="LineType.Solid" ValueProperty="assetValue">
+                        <RadzenMarkers MarkerType="MarkerType.Circle" />
+                        <RadzenAxisTitle Text="Year" />
+                    </RadzenLineSeries>
+                    <RadzenCategoryAxis FormatString="{0}" />
+                    <RadzenValueAxis Formatter="@FormatAsUSD">
+                        <RadzenGridLines Visible="true" />
+                        <RadzenAxisTitle Text="Revenue in USD" />
+                    </RadzenValueAxis>
+                </RadzenChart>
+            </div>
+        </div>
+    </div>
+
+}
+
+@code {
+    string graphVis = "none";
+    string defualtState = "initial";
+    String name;
+    double initialValue;
+    double salvageValue;
+    int usefulLife;
+    DateTime dateIn;
+    DateTime dateOut;
+    DeprecationCalc depCalc = new DeprecationCalc();
+    List<AssetDataClass> AllAssetData = new List<AssetDataClass>();
+
+    public void Cancel(MyAsset asset)
+    {
+        asset.GraphVis = false;
+        api.SaveAssetAsync(asset);
+    }
+
+    public void setValues(MyAsset asset)
+    {
+        name = asset.Name;
+        initialValue = asset.InitValue;
+        salvageValue = asset.SalvageValue;
+        usefulLife = asset.UsefullLife;
+        dateIn = asset.DateIn;
+        dateOut = asset.DateOut;
+    }
+
+    public void Delete(MyAsset asset)
+    {
+        api.DeleteAssetAsync(asset);
+        NavigationManager.NavigateTo("/deprication");
+
+    }
+
+    public void Save(MyAsset asset)
+    {
+        asset.Name = name;
+        asset.InitValue = initialValue;
+        asset.SalvageValue = salvageValue;
+        asset.UsefullLife = usefulLife;
+        asset.DateIn = dateIn;
+        asset.DateOut = dateOut;
+        asset.GraphVis = false;
+
+        api.SaveAssetAsync(asset);
+        asset.YearlyDeprecation = depCalc.CalcYearlyDepreciation(asset);
+
+        NavigationManager.NavigateTo("/deprication");
+    }
+
+    public void AddAsset()
+    {
+        NavigationManager.NavigateTo("/addasset");
+    }
+
+    protected void EditViewItem(int id, MyAsset asset)
+    {
+        asset.YearlyDeprecation = depCalc.CalcYearlyDepreciation(asset);
+        asset.GraphVis = true;
+        setValues(asset);
+
+        api.SaveAssetAsync(asset);
+
+    }
+
+    string FormatAsUSD(object value)
+    {
+        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("en-US"));
+    }
+}

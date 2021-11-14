@@ -1,0 +1,91 @@
+﻿@page "/addasset"
+@using P5DepricationCalc.Data.Interfaces
+@using P5DepricationCalc.Data.Models
+@using System.Globalization
+
+@inject MyAssetApi api
+@inject NavigationManager NavigationManager
+
+<h3>AddAsset</h3>
+
+<div class="alert-warning">@ErrorMessage</div>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Initial Value</th>
+            <th>Salvage Value</th>
+            <th>Useful Life</th>
+            <th>Date Added</th>
+            <th>Date Removed</th>
+        </tr>
+    </thead>
+    <tbody>
+            <tr>
+                <td><input type="text" @bind="@name" /></td>
+                <td><input type="text" @bind="@initialValue" /></td>
+                <td><input type="text" @bind="@salvageValue" /></td>
+                <td><input type="text" @bind="@usefulLife" /></td>
+                <td><input type="date" @bind="@dateIn" /></td>
+                <td><input type="date" @bind="@dateOut" /></td>
+            </tr>
+    </tbody>
+</table>
+
+<button class="btn btn-primary" @onclick="SaveItem">Save</button>
+
+@code {
+
+    String name;
+    int initialValue;
+    int salvageValue;
+    int usefulLife;
+    DateTime dateIn;
+    DateTime dateOut;
+    MyAsset item = new MyAsset();
+    String ErrorMessage = "";
+    bool valid = false;
+
+    public void validSubmit()
+    {
+        //i couldnt get this to work with the editform thing
+    }
+
+    public void SaveItem()
+    {
+        ErrorMessage = "";
+
+        item.Name = name;
+
+        item.InitValue = initialValue;
+        if(initialValue < 0)
+        {
+            ErrorMessage += " | Initial Value Must be greater than 0";
+            valid = false;
+        }
+
+
+        item.SalvageValue = salvageValue;
+        if(salvageValue < 0 || salvageValue > initialValue)
+        {
+            ErrorMessage += " | Salvage value must be greater than 0 and less than the initial value";
+        }
+
+        item.UsefullLife = usefulLife;
+
+        item.DateIn = dateIn;
+
+        item.DateOut = dateOut;
+
+        if(dateIn > dateOut)
+        {
+            ErrorMessage += " | Date Removed has to be after Date Added";
+        }
+
+
+
+        api.SaveAssetAsync(item);
+        NavigationManager.NavigateTo("/deprication");
+    }
+
+}

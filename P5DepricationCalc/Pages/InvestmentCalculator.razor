@@ -1,0 +1,38 @@
+﻿@page "/investmentcalc"
+
+<h2>InvestmentCalc</h2>
+<div class="alert alert-danger" style="@(" display: " + error)">@errorMessage</div><br />
+    <h4 style="@(" display: " + investCalcParams)">Investment Parameters</h4>
+    <h4 style="@(" display: " + result)">Summary</h4>
+
+<div id="years">
+    <p class="h6">Year</p>
+    <input class="input" type="text" style="@("display: " + investCalcParams)" @bind="@years" />
+    <div class="result" style="@("display: " + result)">@years</div>
+</div>
+<div id="interest">
+    <p class="h6">Interest</p>
+    <input class="input" type="text" style="@("display: " + investCalcParams)" @bind="@interest" />
+    <div class="result" style="@("display: " + result)">@interest %</div>
+</div>
+<div id="principle">
+    <p class="h6">Principle</p>
+    <input class="input" type="text" style="@("display: " + investCalcParams)" @bind="@principle" />
+    <div class="result" style="@("display: " + result)">$@principle</div>
+</div>
+<div id="cmpPerYear">
+    <p class="h6">Compounds Per Year</p>
+    <input class="input" type="text" style="@("display: " + investCalcParams)" @bind="@cmpPerYr" />
+    <div class="result" style="@("display: " + result)">@cmpPerYr</div>
+</div>
+<div class="result" style="@("display: " + result)">
+    <div class="h6">Future Value</div>
+    <div>$@futureValue</div>
+</div>
+
+<div><button class="btn btn-primary" style="@("display: " + investCalcParams)" @onclick=@ClickBtn>Submit</button></div>
+<button class="btn btn-primary" style="@(" display: " + result)" onclick="window.location.reload();">Try Another</button>
+
+
+
+
